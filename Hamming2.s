@@ -169,9 +169,7 @@ a
 		MOV r0, #0xA
 bb 
  
-		 
-	
-
+		
 stop	B	stop
 
 	END	
