@@ -1,0 +1,55 @@
+	AREA	Demo, CODE, READONLY
+	IMPORT	main
+	EXPORT	start
+start 
+	LDR r1, =0xA1000400 ;STACK ADDRESS
+	LDR r0, = 0 
+	LDR r2, = rpnexp ;load into register 
+	LDR r7, = 2_1111
+	LDR r9, = 0x0 ;Space place counter 
+loop0 LDRB r3, [r2], #1 ;Take in rpnexp one bit at a time 
+	;INSIDE LOOP
+	MOV r4,r3 ;Copy the bit into r4 
+	MOV r4,r4,LSR #4 ;Shift over one bit to see the first bit
+	ADD r9,r9,#1 ;Increment space counter 
+	
+	;IF ITS A NUMBER 
+	CMP r4, #3 ;If it's first bit is 3 it's a number
+	BNE endif1 ;If r4 != 3 skip to endif1 
+	SUB r5,r3,#0x30 ;Take away 30 from bit and store in r5 
+	STR r5, [r1],#-1 ;Store this in r1, decrement the stack pointer 
+endif1 
+	;IF ITS AN OPERATOR 
+	CMP r4, #2 
+	BNE endif2 ;If not an operator skip this 
+	;ONCE HERE WE KNOW WE ARE DEALING WITH AN OPERATOR
+	;CONDITION FOR PLUS 
+	AND r6,r3, r7 ;AND to isolate the last bit 
+	CMP r6, #0xB
+	BNE endifplus ;if its not a plus skip this bit 
+	LDR r8, =0xB ;r8 will hold the operator ID 
+endifplus 
+	;iF ITS A SPACE THIS IS WHERE THE OPERATOR SHOULD GO 
+	CMP r6,#0 ;This means it's a space 
+	BNE endifspace 
+	;RECORD THE PLACE where the operator should go? 
+	STR r0, [r1], #-1 ;Stash the 'index' of the space/where it goes in the stack 
+endifspace
+endif2 
+	
+	;END OF LOOP0
+	CMP r4,#0 
+	BNE loop0 ;If the incoming bit from rpnexp is not 0, keep looping
+	ADD r1,r1,r9 ;Move back up to the top of the stack 
+	SUB r1,r1,#0x2 ;FORCING ADDRESS BACK TI WHAT IT SHOULD BE 
+loop1 LDRB r10, [r1],#-1 ;Take in each bit of the stack 
+	CMP r8,#0xB ;If its a plus 
+	ADD r0, r0,r10 ;ADD WHATS COMING IN TO TOTAL 
+	SUB r9,r9,#1 
+	CMP r9,#0
+	BNE loop1 
+stop	B	stop
+	AREA	ReversePolish, DATA, READWRITE
+rpnexp	DCB	"2 3 +",0
+	END	
+
